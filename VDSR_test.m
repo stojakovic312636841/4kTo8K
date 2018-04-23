@@ -4,26 +4,34 @@ if isempty(model)
     error('no model');
 else
     modelPath = ['VDSR model/',model];
-    gpu = 1;
+    gpu = 2;
 end
 
 fprintf('load model...\n');
+tic;
 model = load(modelPath);
+toc;
 
 net = model.net;
 net = vl_simplenn_tidy(net);
 
 managableMax = 300000;
 
-dataDir = fullfile('data', datasetName);
+%test by shijie
+%dataDir = fullfile('data', datasetName);
+dataDir = '/media/iqiyi/6CE89A13E899DBA0/SR/720p/gt/';
 f_lst = dir(fullfile(dataDir, '*.*'));
-evaltable = zeros(numel(f_lst),2);
+%evaltable = zeros(numel(f_lst),2);
 
 fprintf('load dir...\n');
+fprintf('sum image:%d...\n',numel(f_lst));
 for f_iter = 1:numel(f_lst)
     f_info = f_lst(f_iter);
     if f_info.isdir, continue; end
     [~,imgName,~] = fileparts(f_lst(f_iter).name);
+    %print
+    fullfile(dataDir, f_info.name)
+    
     imGT = imread(fullfile(dataDir, f_info.name));
     fprintf('read image...\n');
     if size(imGT,3) > 1    
@@ -33,11 +41,13 @@ for f_iter = 1:numel(f_lst)
     end
     
     if 0
+    %size down    
     imhigh = modcrop(im, SF);
     imhigh = single(imhigh)/255;
     imlow = imresize(imhigh, 1/SF, 'bicubic');
     imlow = imresize(imlow, SF, 'bicubic');
     else
+    %without size down
     fprintf('in...\n');
     imlow = single(im)/255;
     imlow = imresize(imlow, SF, 'bicubic');    
@@ -51,14 +61,17 @@ for f_iter = 1:numel(f_lst)
     else
         imlowy = imlow;
     end
-
+    
+    tic;
     if size(imlowy,1)*size(imlowy,2) > managableMax  
         fprintf('run in...\n');
-        impred = runPatchTo16(net, imlowy, gpu, 0);
+        %impred = runPatchTo16(net, imlowy, gpu, 0);
+        impred = runPatchTo256(net, imlowy, gpu,0);
     else
         if gpu, imlowy = gpuArray(imlowy); end;
         impred = runVDSR(net, imlowy, gpu);
     end
+    toc;
     
     if size(imGT,3) > 1
         impredColor = cat(3,impred,imlowcb,imlowcr);
@@ -67,9 +80,13 @@ for f_iter = 1:numel(f_lst)
         impredColor = impred;
         imwrite(uint8(impredColor*255), fullfile(outRoute, [imgName, '.png']));
     end
-    imtest = imread(fullfile(outRoute, [imgName, '.png']));
+    
+    %imtest = imread(fullfile(outRoute, [imgName, '.png']));
     %[psnr, ssim] = compute_diff(imGT,imtest,SF);
-    %evaltable(f_iter,1) = psnr; evaltable(f_iter,2) = ssim;    
+    %evaltable(f_iter,1) = psnr; evaltable(f_iter,2) = ssim;  
+    %delte gt file
+    delete(fullfile(dataDir, f_info.name));
+    fprintf('%d: over...\n',f_iter);
 end
 
-save(fullfile(outRoute,'psnr_ssim.mat'),'evaltable');
+%save(fullfile(outRoute,'psnr_ssim.mat'),'evaltable');
