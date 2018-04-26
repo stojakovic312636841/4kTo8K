@@ -25,15 +25,18 @@ f_lst = dir(fullfile(dataDir, '*.*'));
 
 fprintf('load dir...\n');
 fprintf('sum image:%d...\n',numel(f_lst));
+
 for f_iter = 1:numel(f_lst)
     f_info = f_lst(f_iter);
     if f_info.isdir, continue; end
     [~,imgName,~] = fileparts(f_lst(f_iter).name);
+    
     %print
     fullfile(dataDir, f_info.name)
     
     imGT = imread(fullfile(dataDir, f_info.name));
     fprintf('read image...\n');
+    
     if size(imGT,3) > 1    
         im = rgb2ycbcr(imGT);
     else
