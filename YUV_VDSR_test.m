@@ -22,7 +22,7 @@ managableMax = 300000;
 
 
 %% 读取YUV文件夹
-dataDir = '/media/iqiyi/6CE89A13E899DBA0/SR/test/';
+dataDir = '/media/iqiyi/6CE89A13E899DBA0/SR/bwbj/';
 f_lst = dir(fullfile(dataDir, '*_444*.yuv'));
 
 fprintf('load dir...\n');
@@ -44,10 +44,10 @@ for f_iter = 1:numel(f_lst)
     fid = fopen(fullfile(dataDir, f_info.name),'r');
     
     %图像的高、宽
-    row=1080;
+    row=1038;
     col=1920; 
     %序列的帧数
-    frames=24*60;
+    frames=25*70;
     
     %% 开始读入YUV数据
     fprintf('read movie...\n');
